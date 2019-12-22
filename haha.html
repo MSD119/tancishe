@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>snake</title>
+</head>
+<style type="text/css">
+    body {
+        background-image: url("img/背景3.jpg");
+
+    }
+    canvas {
+        display: block;
+        margin: 0 auto;
+        border: 2px dashed skyblue; 
+        box-shadow: 10px 5px 7px 8px black;
+         
+
+    }
+    #btn{
+        background-color:lightcoral;
+        width: 100px;
+        height: 40px;
+        border-width: 0px;
+        border-radius: 3px;
+        cursor: pointer;
+        outline: none;
+        font-size: 20px;
+        position: absolute;
+        top: 300px;
+        right: 120px;
+    }
+    #btn:hover{
+        background: #5599FF;
+    }
+    #btn1{
+        background-color:lightcoral;
+        width: 100px;
+        height: 40px;
+        border-width: 0px;
+        border-radius: 3px;
+        cursor: pointer;
+        outline: none;
+        font-size: 20px;
+        position: absolute;
+        top: 200px;
+        right: 120px;
+    }
+    #btn1:hover{
+        background: #5599FF;
+    }
+</style>
+<body>
+<canvas id="canvas" width="800px" height="600px"></canvas>
+<br>
+<button id="btn">暂停</button>
+
+<button id="btn1"  onclick="location.reload()">Restart!</button>
+<!--
+<button id="btn2">加速</button>
+-->
+
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script type="text/javascript">
+    var context=document.getElementById("canvas").getContext("2d");
+    var score=0;
+    var Block=function(x,y,size){
+        this.x=x;
+        this.y=y;
+        this.size=size;
+        this.color=["pink","lightgreen","lightblue","fuchsia","cyan",
+            "chartreuse","darkgreen","greenyellow"];
+    }
+    Block.prototype.draw=function(){
+        color=ranReverseArray(this.color);
+        var startPoint=0;
+        for(var i=0;i<color.length;i++){
+            context.fillStyle=color[i];
+            context.beginPath();
+            context.moveTo(this.x*this.size+this.size/2,this.y*this.size+this.size/2);
+            context.arc(this.x*this.size+this.size/2,this.y*this.size+this.size/2,
+                this.size/2,startPoint,startPoint+Math.PI/4,false);
+            context.fill();
+            startPoint+=Math.PI/4;
+        }
+    }
+    function ranReverseArray(oldArray){
+        var newArray=[];
+        var len=oldArray.length;
+        var ranNumber,flag;
+        for(let i=0;i<oldArray.length;i++){
+            while(true){
+                ranNumber=Math.floor(Math.random()*len);
+                flag=true;
+                for(let j=0;j<i;j++){
+                    if (newArray[j]==oldArray[ranNumber]) {
+                        flag=false;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+            newArray[i]=oldArray[ranNumber];
+        }
+        return newArray;
+    }
+    var Snake={
+        body:[new Block(20,21,20),new Block(20,22,20),new Block(20,23,20)],
+        direction:"up"
+    }
+    Snake.draw=function(){
+        $.each(this.body,function(key,value){
+            value.draw();
+        });
+    }
+    //移动
+    Snake.move=function(){
+        var head=this.body[0];
+        var newHead;
+        if (this.direction=="up"){
+            newHead=new Block(head.x,head.y-1,head.size);
+        }
+        if (this.direction=="down"){
+            newHead=new Block(head.x,head.y+1,head.size);
+        }
+        if (this.direction=="left"){
+            newHead=new Block(head.x-1,head.y,head.size);
+        }
+        if (this.direction=="right"){
+            newHead=new Block(head.x+1,head.y,head.size);
+        }
+        this.body.unshift(newHead);
+        if (newHead.x<0||newHead.x>39){  //判断是否撞东西墙
+            gameOver();
+        }
+        if (newHead.y<0||newHead.y>29){ //判断是否撞南北墙
+            gameOver();
+        }
+        if (newHead.x==apple.x&&newHead.y==apple.y){  //判断是否吃到苹果
+            score=score+20;
+            while(true){  //产生新苹果，但新苹果不能在蛇身上
+                apple.x=Math.floor(Math.random()*40);
+                apple.y=Math.floor(Math.random()*30);
+                let flag=true;
+                $.each(this.body,function(key,value){ //苹果位置是否和蛇的某个块重合
+                    if (value.x==apple.x&&value.x==apple.x)
+                        flag=false;
+                });
+                if (flag) break;
+            }
+        }else{  //如果没吃到苹果，蛇身不能变。头前增加了一个块，末尾就得删除一个快
+            this.body.pop();
+        }
+//判断蛇是否首尾相连了，如果是游戏失败
+        if (newHead.x==this.body[this.body.length-1].x
+            &&newHead.y==this.body[this.body.length-1].y){
+            gameOver();
+        }
+    }
+    var interval=setInterval(baginGame,200);
+    //游戏结束
+    function gameOver(){
+        clearInterval(interval);
+        context.font="80px Comic Sans Ms";
+        context.fillStyle="Orange";
+        context.shadowBlue=5;
+        context.shadowOffsetX=5;
+        context.shadowOffsetY=5;
+        context.shadowColor="red";
+        context.textAlign="center";        
+        context.textBaseline="middle";
+        context.fillText("GAME OVER",300,200);
+    }
+    var apple={
+        x:Math.floor(Math.random()*40),
+        y:Math.floor(Math.random()*30),
+        size:10,
+        draw:function(){
+            context.fillStyle="red";
+            context.beginPath();
+            context.arc(this.x*2*this.size+this.size,this.y*2*this.size+this.size,
+                this.size,0,360,false);
+            context.fill();
+        }
+    }
+    var culTime=0;
+    //游戏开始，开始计分
+    function baginGame(){
+        context.clearRect(0,0,800,600);
+        culTime++;
+        if (culTime==5){
+            gameTime.second++;
+            culTime=0;
+            gameTime.show();
+        }
+        context.textBaseline="top";
+        context.textAlign="left";
+        context.font="20px Arial";
+        context.fillText("score:"+score,10,10);
+        gameTime.draw();
+        Snake.draw();
+        Snake.move();
+        apple.draw();
+    }
+    /*//添加刷新按钮
+    refresh.onclick=function(){
+        window.location.reload();
+    };
+    */
+    $("body").keydown(function(event){
+        if (event.keyCode==37&&Snake.direction!="right"){
+            Snake.direction="left";
+        }
+        if (event.keyCode==39&&Snake.direction!="left"){
+            Snake.direction="right";
+        }
+        if (event.keyCode==38&&Snake.direction!="down"){
+            Snake.direction="up";
+        }
+        if (event.keyCode==40&&Snake.direction!="up"){
+            Snake.direction="down";
+        }
+    });
+    //以下代码设置游戏的“暂停”和“开始”
+    $("#btn").click(function(){
+        if ($(this).text()=="暂停"){
+            clearInterval(interval);
+            $(this).text("开始");
+        }else{
+            interval=setInterval(baginGame,200);
+            $(this).text("暂停");
+        }
+    });  
+    //计时
+    var MyTime=function(hour,minute,second){
+         this.hour=hour;
+         this.minute=minute;
+         this.second=second;
+         this.myTime="";
+         this.show=function(){
+             if (this.second==60){
+                 this.second=0;
+                 this.minute=this.minute+1;
+             }
+             if (this.minute==60){
+                 this.minute=0;
+                 this.hour=this.hour+1;
+             }
+             this.myTime="";
+             if (this.hour<10){
+                 this.myTime=this.myTime+"0"+this.hour+":";
+             }else{
+                 this.myTime=this.myTime+this.hour+":";
+             }
+             if (this.minute<10){
+                 this.myTime=this.myTime+"0"+this.minute+":";
+             }else{
+                 this.myTime=this.myTime+this.minute+":";
+             }
+             if (this.second<10){
+                 this.myTime=this.myTime+"0"+this.second;
+             }else{
+                 this.myTime=this.myTime+this.second+"";
+             }
+         };
+         this.draw=function(){ 
+             context.fillStyle="Orange";           
+             context.textBaseline="top";
+             context.textAlign="right";
+             context.font="20px Arial";
+             context.fillText("计时:"+this.myTime,700,10);
+         }
+     }
+     var gameTime=new MyTime(0,0,0);
+
+</script>
+</body>
+</html>
